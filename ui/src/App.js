@@ -1,15 +1,17 @@
 import "./App.css";
 import React, { useState } from "react";
+import Help from "./Help";
+import { SECTIONS_LIST, EXTERNAL_SECTION } from "./constant";
 import {
   Switch,
-  FormLabel,
-  Box,
   Stack,
   Alert,
+  ChakraProvider,
   AlertIcon,
-} from "@chakra-ui/react";
-import { ChakraProvider, Link, Button } from "@chakra-ui/react";
-import {
+  Button,
+  FormLabel,
+  Box,
+  Link,
   Input,
   Table,
   Thead,
@@ -22,141 +24,17 @@ import {
 } from "@chakra-ui/react";
 
 function App() {
+  const [isHelpEnabled, setIsHelpEnabled] = useState(false);
+
   const AZURE_URL = "https://azure.microsoft.com/en-us/pricing/calculator/";
   const API_URL = "http://127.0.0.1:5000/add";
-  const EXTERNAL_SECTION = {
-    name: "D",
-    isExternal: true,
-    spec: [
-      {
-        name: "Data storage",
-        isFixed: false,
-        isFaas: false,
-        price: 0,
-        noOfIteration: 0,
-      },
-      {
-        name: "Container instances",
-        isFixed: false,
-        isFaas: false,
-        price: 0,
-        noOfIteration: 0,
-      },
-    ],
-  };
-  const SECTIONS_LIST = [
-    {
-      name: "A",
-      isExternal: false,
-      spec: [
-        {
-          name: "Cost Of Ownership",
-          isFixed: false,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-        {
-          name: "Application",
-          isFixed: false,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-        {
-          name: "Development",
-          isFixed: true,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-      ],
-    },
-    {
-      name: "B",
-      isExternal: false,
-      spec: [
-        {
-          name: "Testing",
-          isFixed: false,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-        {
-          name: "License",
-          isFixed: false,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-        {
-          name: "Training",
-          isFixed: true,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-      ],
-    },
-    {
-      name: "C",
-      isExternal: false,
-      spec: [
-        {
-          name: "Data transfer",
-          isFixed: false,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-        {
-          name: "Hardware",
-          isFixed: false,
-          isFaas: false,
-          price: 0,
-          noOfIteration: 0,
-        },
-      ],
-    },
-  ];
+
   const DEFAULT_FIXED = ["Development", "Training"];
-  const SECTION_COLOURS = {
-    A: "blue.50",
-    B: "blue.50",
-    C: "blue.50",
-    D: "blue.50",
-  };
+  const SECTION_COLOURS = "blue.50";
 
-  // Variables
-  const [isExternalSelected, setIsExternalSelected] = useState(true);
-  const [sectionList, setSectionList] = useState([
-    ...SECTIONS_LIST,
-    EXTERNAL_SECTION,
-  ]);
   const [errorList, setErrorList] = useState([]);
-  const [costs, setCosts] = useState(null);
-
-  const handleToggle = () => {
-    const isSectionExists = sectionList.some(
-      (section) => section.name === EXTERNAL_SECTION.name
-    );
-
-    if (isSectionExists) {
-      // Remove the section
-      const updatedSectionsList = sectionList.filter(
-        (section) => section.name !== EXTERNAL_SECTION.name
-      );
-      setSectionList(updatedSectionsList);
-    } else {
-      // Add the section
-      setSectionList((prevSectionsList) => [
-        ...prevSectionsList,
-        EXTERNAL_SECTION,
-      ]);
-    }
-    setIsExternalSelected(!isExternalSelected);
-  };
+  const [isResultView, setIsResultView] = useState(false);
+  const [cost, setCost] = useState(null);
 
   const updateFlag = (sectionIndex, priceIndex, field, event) => {
     const newSectionsList = sectionList.map((section, sIndex) => {
@@ -225,184 +103,264 @@ function App() {
       })
         .then((response) => {
           if (!response.ok) {
-            setCosts(null);
+            setCost(null);
             throw new Error("Network response was not ok");
           }
           return response.json();
         })
         .then((data) => {
-          // Handle response data
-          console.log(data);
-          setCosts(data);
+          setSectionList(data.data);
+          var obj = {
+            "Iteration Cost": data?.total_Cost_per_iteration,
+            "Monthly Cost": data?.total_Cost_per_month,
+            "Fixed Cost": data?.total_Fixed_cost,
+          };
+          setCost(obj);
+          setIsResultView(true);
         })
         .catch((error) => {
-          // Handle errors
-          setCosts(null);
           setErrorList(...{ error });
           console.log(error);
         });
     }
   };
+  // Variables
+  const [isExternalSelected, setIsExternalSelected] = useState(true);
+  const [sectionList, setSectionList] = useState([
+    ...SECTIONS_LIST,
+    EXTERNAL_SECTION,
+  ]);
+
+  const handleToggle = () => {
+    const isSectionExists = sectionList.some(
+      (section) => section.name === EXTERNAL_SECTION.name
+    );
+
+    if (isSectionExists) {
+      // Remove the section
+      const updatedSectionsList = sectionList.filter(
+        (section) => section.name !== EXTERNAL_SECTION.name
+      );
+      setSectionList(updatedSectionsList);
+    } else {
+      // Add the section
+      setSectionList((prevSectionsList) => [
+        ...prevSectionsList,
+        EXTERNAL_SECTION,
+      ]);
+    }
+    setIsExternalSelected(!isExternalSelected);
+  };
 
   return (
     <ChakraProvider>
       <Box w="100%" p={1} display={"flex"}>
-        <FormLabel htmlFor="section-type" mb="0">
-          Enable internal?
-        </FormLabel>
-        <Switch
-          id="section-type"
-          isChecked={isExternalSelected}
-          onChange={handleToggle}
-        />
+        <Box w="50%" p={1} display={"flex"} justifyContent={"flex-start"}>
+          {!isHelpEnabled && (
+            <>
+              <FormLabel htmlFor="section-type" mb="0">
+                Enable external?
+              </FormLabel>
+              <Switch
+                id="section-type"
+                isChecked={isExternalSelected}
+                onChange={handleToggle}
+              />
+            </>
+          )}
+        </Box>
+        <Box w="50%" p={1} display={"flex"} justifyContent={"flex-end"}>
+          <Button
+            colorScheme="blue"
+            variant="solid"
+            onClick={() => {
+              setIsHelpEnabled(!isHelpEnabled);
+            }}
+          >
+            {isHelpEnabled ? "Back" : "Help"}
+          </Button>
+        </Box>
       </Box>
-      <Box w="100%" p={1} display={"flex"}>
-        <FormLabel htmlFor="section-type" mb="0">
-          Selected Type : {isExternalSelected ? "External" : "Internal"}
-        </FormLabel>
-      </Box>
+      {!isHelpEnabled && (
+        <Box w="100%" p={1} display={"flex"}>
+          <FormLabel htmlFor="section-type" mb="0">
+            Selected Type : {isExternalSelected ? "External" : "Internal"}
+          </FormLabel>
+        </Box>
+      )}
+      {isHelpEnabled ? (
+        <Help />
+      ) : (
+        <div>
+          {/* Table with all price points */}
+          <TableContainer>
+            <Table variant="simple">
+              <Thead>
+                <Tr>
+                  <Th>Price Section Name</Th>
+                  {!isResultView && <Th>Fixed/Monthly</Th>}
+                  {!isResultView && <Th>FaaS/PaaS</Th>}
+                  {!isResultView && <Th>Price</Th>}
+                  {!isResultView && <Th>Iteration</Th>}
+                  {isResultView && <Th>Fixed Cost</Th>}
+                  {isResultView && <Th>Monthly Cost</Th>}
+                  {isResultView && <Th>Iteration Cost</Th>}
+                  {!isResultView && <Th>Reference</Th>}
+                </Tr>
+              </Thead>
+              <Tbody>
+                {sectionList.map((sectionItem, sectionIndex) => {
+                  // Skip the section with index 4 if the external flag is true
+                  if (!isExternalSelected && sectionItem.isExternal) {
+                    return null;
+                  }
+                  return (
+                    <React.Fragment key={sectionIndex}>
+                      {sectionItem.spec.map((price, priceIndex) => (
+                        <Tr key={priceIndex} bgColor={SECTION_COLOURS}>
+                          <Td>{price.name}</Td>
+                          {!isResultView && (
+                            <Td>
+                              <Switch
+                                id={`${priceIndex}-isFixed`}
+                                isChecked={price.isFixed}
+                                onChange={() => {
+                                  if (!DEFAULT_FIXED.includes(price.name)) {
+                                    updateFlag(
+                                      sectionIndex,
+                                      priceIndex,
+                                      "isFixed"
+                                    );
+                                  }
+                                }}
+                              />
+                              <Text>{price.isFixed ? "Fixed" : "Monthly"}</Text>
+                            </Td>
+                          )}
+                          {!isResultView && (
+                            <Td>
+                              <Switch
+                                id={`${priceIndex}-isFaas`}
+                                isChecked={price.isFaas}
+                                onChange={() => {
+                                  if (!DEFAULT_FIXED.includes(price.name)) {
+                                    updateFlag(
+                                      sectionIndex,
+                                      priceIndex,
+                                      "isFaas"
+                                    );
+                                  }
+                                }}
+                              />
+                              <Text>{price.isFaas ? "FaaS" : "PaaS"}</Text>
+                            </Td>
+                          )}
+                          {!isResultView && (
+                            <Td>
+                              <Input
+                                placeholder="Enter Price"
+                                onChange={(event) =>
+                                  updateFlag(
+                                    sectionIndex,
+                                    priceIndex,
+                                    "price",
+                                    event
+                                  )
+                                }
+                                value={price.price}
+                                type="number"
+                              />
+                            </Td>
+                          )}
+                          {!isResultView && (
+                            <Td>
+                              <Input
+                                disabled={
+                                  !price.isFaas ||
+                                  DEFAULT_FIXED.includes(price.name)
+                                }
+                                value={price.noOfIteration}
+                                placeholder="Enter No Of iteration"
+                                onChange={(event) =>
+                                  updateFlag(
+                                    sectionIndex,
+                                    priceIndex,
+                                    "noOfIteration",
+                                    event
+                                  )
+                                }
+                                type="number"
+                              />
+                            </Td>
+                          )}
+                          {isResultView && <Td>{price?.fixedCost}</Td>}
+                          {isResultView && <Td>{price?.monthlyCost}</Td>}
+                          {isResultView && <Td>{price?.iterationCost}</Td>}
+                          {!isResultView && (
+                            <Td>
+                              {sectionItem.isExternal && (
+                                <Link href={AZURE_URL} isExternal>
+                                  Open Browser
+                                </Link>
+                              )}
+                            </Td>
+                          )}
+                        </Tr>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
+              </Tbody>
+            </Table>
+          </TableContainer>
 
-      {/* Error Alerts */}
-      <Stack spacing={3}>
-        {errorList.map((error, index) => (
-          <Alert status="error" key={index}>
-            <AlertIcon />
-            {error}
-          </Alert>
-        ))}
-      </Stack>
-      <Stack spacing={3}>
-        {costs &&
-          Object.entries(costs).map(([key, value]) => (
-            <Alert status="success" key={key}>
-              <AlertIcon />
-              <strong>{key}:</strong> {value}
-            </Alert>
-          ))}
-        {errorList.map((error, index) => (
-          <Alert status="error" key={index}>
-            <AlertIcon />
-            {error}
-          </Alert>
-        ))}
-      </Stack>
+          {/* Action Buttons */}
+          <Stack direction="row" spacing={4} mt={4} mb={4}>
+            {!isResultView && (
+              <Button colorScheme="blue" variant="solid" onClick={handleClick}>
+                Calculate
+              </Button>
+            )}
+            <Button
+              colorScheme="gray"
+              variant="outline"
+              onClick={() => {
+                setIsExternalSelected(true);
+                setSectionList(SECTIONS_LIST);
+                setIsResultView(false);
+                setCost(null);
+              }}
+            >
+              Reset
+            </Button>
+          </Stack>
 
-      {/* Table with all price points */}
-      <TableContainer>
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Price Section Name</Th>
-              <Th>Fixed/Monthly</Th>
-              <Th>FaaS/PaaS</Th>
-              <Th>Price</Th>
-              <Th>Reference</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {sectionList.map((sectionItem, sectionIndex) => {
-              // Skip the section with index 4 if the external flag is true
-              if (!isExternalSelected && sectionItem.isExternal) {
-                return null;
-              }
-              return (
-                <React.Fragment key={sectionIndex}>
-                  {sectionItem.spec.map((price, priceIndex) => (
-                    <Tr
-                      key={priceIndex}
-                      bgColor={SECTION_COLOURS[sectionItem.name]}
-                    >
-                      <Td>{price.name}</Td>
-                      <Td>
-                        <Switch
-                          id={`${priceIndex}-isFixed`}
-                          isChecked={price.isFixed}
-                          onChange={() => {
-                            if (!DEFAULT_FIXED.includes(price.name)) {
-                              updateFlag(sectionIndex, priceIndex, "isFixed");
-                            }
-                          }}
-                        />
-                        <Text>{price.isFixed ? "Fixed" : "Monthly"}</Text>
-                      </Td>
-                      <Td>
-                        <Switch
-                          id={`${priceIndex}-isFaas`}
-                          isChecked={price.isFaas}
-                          onChange={() =>
-                            updateFlag(sectionIndex, priceIndex, "isFaas")
-                          }
-                        />
-                        <Text>{price.isFaas ? "FaaS" : "PaaS"}</Text>
-                      </Td>
-                      <Td>
-                        <Box display="flex" justifyContent="space-between">
-                          <Input
-                            placeholder="Enter Price"
-                            onChange={(event) =>
-                              updateFlag(
-                                sectionIndex,
-                                priceIndex,
-                                "price",
-                                event
-                              )
-                            }
-                            value={price.price}
-                            type="number"
-                            width="48%"
-                          />
-                          <Input
-                            disabled={
-                              !price.isFaas ||
-                              DEFAULT_FIXED.includes(price.name)
-                            }
-                            value={price.noOfIteration}
-                            placeholder="Enter No Of iteration"
-                            onChange={(event) =>
-                              updateFlag(
-                                sectionIndex,
-                                priceIndex,
-                                "noOfIteration",
-                                event
-                              )
-                            }
-                            type="number"
-                            width="38%"
-                          />
-                        </Box>
-                      </Td>
-                      <Td>
-                        {sectionItem.isExternal && (
-                          <Link href={AZURE_URL} isExternal>
-                            Open Browser
-                          </Link>
-                        )}
-                      </Td>
-                    </Tr>
-                  ))}
-                </React.Fragment>
-              );
-            })}
-          </Tbody>
-        </Table>
-      </TableContainer>
-
-      {/* Action Buttons */}
-      <Stack direction="row" spacing={4} mt={4} mb={4}>
-        <Button colorScheme="blue" variant="solid" onClick={handleClick}>
-          Calculate
-        </Button>
-        <Button
-          colorScheme="gray"
-          variant="outline"
-          onClick={() => {
-            setIsExternalSelected(true);
-            setSectionList(SECTIONS_LIST);
-          }}
-        >
-          Reset
-        </Button>
-      </Stack>
+          {/* Error Alerts */}
+          <Stack spacing={3}>
+            {errorList.map((error, index) => (
+              <Alert status="error" key={index}>
+                <AlertIcon />
+                {error}
+              </Alert>
+            ))}
+          </Stack>
+          <Stack spacing={3}>
+            {cost &&
+              Object.entries(cost).map(([key, value]) => (
+                <Alert status="success" key={key}>
+                  <AlertIcon />
+                  <strong>{key}:</strong> {value}
+                </Alert>
+              ))}
+            {errorList.map((error, index) => (
+              <Alert status="error" key={index}>
+                <AlertIcon />
+                {error}
+              </Alert>
+            ))}
+          </Stack>
+        </div>
+      )}
     </ChakraProvider>
   );
 }
