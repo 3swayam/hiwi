@@ -1,7 +1,12 @@
 import "./App.css";
 import React, { useState } from "react";
 import Help from "./Help";
-import { SECTIONS_LIST, EXTERNAL_SECTION } from "./constant";
+import {
+  SECTIONS_LIST,
+  EXTERNAL_SECTION,
+  SECTIONS_LIST_WITH_VALUE,
+  EXTERNAL_SECTION_WITH_VALUE,
+} from "./constant";
 import {
   Switch,
   Stack,
@@ -127,26 +132,26 @@ function App() {
   // Variables
   const [isExternalSelected, setIsExternalSelected] = useState(true);
   const [sectionList, setSectionList] = useState([
-    ...SECTIONS_LIST,
-    EXTERNAL_SECTION,
+    ...SECTIONS_LIST_WITH_VALUE,
+    EXTERNAL_SECTION_WITH_VALUE,
   ]);
 
   const handleToggle = () => {
     const isSectionExists = sectionList.some(
-      (section) => section.name === EXTERNAL_SECTION.name
+      (section) => section.name === EXTERNAL_SECTION_WITH_VALUE.name
     );
 
     if (isSectionExists) {
       // Remove the section
       const updatedSectionsList = sectionList.filter(
-        (section) => section.name !== EXTERNAL_SECTION.name
+        (section) => section.name !== EXTERNAL_SECTION_WITH_VALUE.name
       );
       setSectionList(updatedSectionsList);
     } else {
       // Add the section
       setSectionList((prevSectionsList) => [
         ...prevSectionsList,
-        EXTERNAL_SECTION,
+        EXTERNAL_SECTION_WITH_VALUE,
       ]);
     }
     setIsExternalSelected(!isExternalSelected);
@@ -326,7 +331,7 @@ function App() {
               variant="outline"
               onClick={() => {
                 setIsExternalSelected(true);
-                setSectionList(SECTIONS_LIST);
+                setSectionList([...SECTIONS_LIST, EXTERNAL_SECTION]);
                 setIsResultView(false);
                 setCost(null);
               }}
